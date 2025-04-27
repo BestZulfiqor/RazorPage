@@ -1,0 +1,26 @@
+@page "{id:int}"
+@model Pages.Tables.Delete
+
+<h2 class="mb-4 fw-bold text-center">Удаление столика</h2>
+
+<div class="alert alert-danger">
+    <strong>Внимание!</strong> Вы уверены, что хотите удалить столика <strong>@Model.Table.Number</strong>?
+</div>
+
+<form method="post">
+    <input type="hidden" asp-for="Table.Id" />
+    <div class="form-group mb-3">
+        <label asp-for="Table.Number" class="control-lable">Number</label>
+        <input type="text" asp-for="Table.Number" class="form-control">
+        <span asp-validation-for="Table.Number" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="Table.Seats" class="control-lable">Seats</label>
+        <input type="text" asp-for="Table.Seats" class="form-control">
+        <span asp-validation-for="Table.Seats" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-danger">Удалить</button>
+    <a asp-page="./Index" class="btn btn-secondary ms-2">Отмена</a>
+</form>

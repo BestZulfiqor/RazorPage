@@ -1,0 +1,42 @@
+@page "{tableId:int}"
+@model Pages.Reservations.Create
+
+<h2 class="mb-4 fw-bold text-center">Бронирование столика</h2>
+
+
+<form method="post" class="container mt-5" style="max-width: 600px;">
+    <div class="form-group mb-3">
+        <label for="client">Клиент</label>
+        <select asp-for="Reservations.CustomerId" class="form-control">
+            <option value="">Выберите клиента</option>
+            @foreach (var customer in Model.Customers)
+            {
+                <option value="@customer.Id">@customer.FullName</option>
+            }
+        </select>
+
+    </div>
+
+    <div class="form-group mb-3"></div>
+    <label for="table">Столик</label>
+    <select asp-for="Reservations.TableId" class="form-control">
+        <option value="">Выберите столик</option>
+        @foreach (var table in @Model.Tables)
+        {
+            <option value="@table.Id" selected="@((Model.Reservations.TableId == table.Id) ? "selected" : "")">
+                Столик №@table.Number (мест: @table.Seats)
+            </option>
+        }
+    </select>
+    </div>
+
+    <div class="form-group mb-3"
+        style="display: flex; flex-direction: column; gap: 5px; max-width: 500px; align-items: center;justify-content: center; margin: auto;">
+        <label for="reservationTime">Время бронирование</label>
+        <input type="datetime-local" asp-for="Reservations.ReservationDate" id="reservationTime" class="form-control"
+            value="@Model.Reservations.ReservationDate">
+        <button class="btn btn-primary w-100" type="submit">Сохранить</button>
+
+    </div>
+
+</form>

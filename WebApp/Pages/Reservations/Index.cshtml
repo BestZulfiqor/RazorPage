@@ -1,0 +1,39 @@
+@page
+@model Pages.Reservations.Index
+<form method="get">
+    <div class="form-group">
+        <label for="searchTableNumber">Номер столика</label>
+        <input type="number" class="form-control" id="searchTableNumber" name="searchTableNumber" />
+    </div>
+    <div class="form-group">
+        <label for="searchDate">Дата бронирования</label>
+        <input type="date" class="form-control" id="searchDate" name="searchDate" />
+    </div>
+    <button type="submit" class="btn btn-primary">Фильтровать</button>
+</form>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Номер столика</th>
+        <th>Имя клиента</th>
+        <th>Дата и время</th>
+        <th>Действия</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var reservation in Model.Reservations)
+    {
+        <tr>
+            <td>@reservation.Table.Number</td>
+            <td>@reservation.Customer.FullName</td>
+            <td>@reservation.ReservationDate</td>
+            <td>
+                <form method="post" asp-page-handler="Delete" asp-route-id="@reservation.Id">
+                    <button type="submit" class="btn btn-danger">Отменить</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
