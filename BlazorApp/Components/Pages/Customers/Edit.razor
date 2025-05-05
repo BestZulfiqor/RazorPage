@@ -1,0 +1,73 @@
+﻿@page "/customers/edit/{id:int}"
+@using System.Net
+@using Domain.DTOs.Customers
+@using Infrastructure.Interfaces
+@rendermode InteractiveServer
+@inject ICustomerService CustomerService
+@inject NavigationManager Navigation
+
+<h3>Edit customer</h3>
+
+<EditForm Model="@customer" OnValidSubmit="@SaveCustomer">
+    <DataAnnotationsValidator/>
+    <div class="mb-3">
+        <label class="form-label">Full name</label>
+        <InputText class="form-control" @bind-Value="customer.FullName"/>
+        <ValidationMessage For="@(() => customer.FullName)" TValue="string"/>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Phone</label>
+        <InputText class="form-control" @bind-Value="customer.Phone"/>
+        <ValidationMessage For="@(() => customer.Phone)" TValue="string"/>
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary me-2">Save</button>
+        <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+    </div>
+</EditForm>
+
+@code{
+    [Parameter]
+    public int Id { get; set; }
+    private GetCustomerDto customer = new();
+    private string errorMessage = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await CustomerService.GetCustomerByIdAsync(Id);
+        customer = response.Data!;
+    }
+    
+    private async Task SaveCustomer()
+    {
+        try
+        {
+            var updateCustomerDto = new UpdateCustomerDto()
+            {
+                Id = customer.Id,
+                FullName = customer.FullName,
+                Phone= customer.Phone,
+            };
+            var response = await CustomerService.UpdateCustomerAsync(updateCustomerDto.Id, updateCustomerDto);
+            if (!response.IsSuccess)
+            {
+                errorMessage = response.Message!;
+                return;
+            }
+            Navigation.NavigateTo("/customers");
+        }
+        catch (Exception e)
+        {
+            errorMessage = e.Message;
+            Console.WriteLine(e);
+            throw;  
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/customers");
+    }
+
+}

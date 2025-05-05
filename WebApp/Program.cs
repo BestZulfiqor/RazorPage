@@ -1,3 +1,4 @@
+using Infrastructure.AutoMapper;
 using Infrastructure.Data;
 using Infrastructure.Interfaces;
 using Infrastructure.Services;

@@ -1,0 +1,121 @@
+﻿@page "/reservations"
+@using Domain.DTOs.Reservations
+@using Infrastructure.Interfaces
+@inject NavigationManager Navigation
+@inject IReservationService ReservationService
+@rendermode InteractiveServer
+
+<h3>Reservations</h3>
+
+<div class="d-flex justify-content-end">
+    <button class="btn btn-primary mb-4" style="background-color: #4A3AFF" @onclick="NavigateToCreate">
+        + Add new
+    </button>
+</div>
+
+<div class="row">
+    @foreach (var reservation in reservations)
+    {
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 border-0 shadow rounded-4 pt-8">
+                <img
+                    src="https://media.licdn.com/dms/image/v2/D4D12AQEwjiIh5bMaNQ/article-cover_image-shrink_600_2000/article-cover_image-shrink_600_2000/0/1695267350942?e=2147483647&v=beta&t=ShlNlV3-ImivEgxTxYcRzet9vN3j94w79d3qHkhwe14"
+                    class="card-img-top w-75 m-auto" alt="Reservation photo"/>
+                <div class="card-body text-center">
+                    <div class="d-flex flex-column">
+                        <p class="card-title mb-1">Reservation id: @reservation.Id</p>
+                        <p class="card-title mb-1">Customer id: @reservation.CustomerId</p>
+                        <p class="card-title mb-1">Reservation date: @reservation.ReservationDate</p>
+                        <p class="card-title mb-1">Table id: @reservation.TableId</p>
+                    </div>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button @onclick="@(() => NavigateToEdit(reservation.Id))" class="btn btn-sm btn-primary">
+                            Edit
+                        </button>
+                        <button @onclick="@(() => ShowDeleteConfirm(reservation.Id))" class="btn btn-danger btn-sm">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (showDeleteConfirm)
+{
+    <div class="modal" style="display:block; background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение удаления</h5>
+                </div>
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите удалить этот бронь?</p>
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button @onclick="CancelDelete" class="btn btn-secondary">Отмена</button>
+                    <button @onclick="ConfirmDelete" class="btn btn-danger">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code{
+    private List<GetReservationDto> reservations = new();
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await ReservationService.GetReservations();
+        reservations = response.Data!;
+    }
+
+    void NavigateToCreate()
+    {
+        Navigation.NavigateTo("/reservations/create");
+    }
+
+    void NavigateToEdit(int id)
+    {
+        Navigation.NavigateTo($"/reservations/edit/{id}");
+    }
+
+    private bool showDeleteConfirm = false;
+    private int reservationIdToDelete;
+
+    private void ShowDeleteConfirm(int id)
+    {
+        reservationIdToDelete = id;
+        showDeleteConfirm = true;
+        errorMessage = string.Empty;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirm = false;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        var response = await ReservationService.DeleteReservationAsync(reservationIdToDelete);
+
+        if (!response.IsSuccess)
+        {
+            showDeleteConfirm = false;
+            await OnInitializedAsync();
+        }
+        else
+        {
+            errorMessage = response.Message ?? "Ошибка при удалении";
+        }
+    }
+
+}
+
+}

@@ -1,0 +1,120 @@
+﻿@page "/customers"
+@using Domain.DTOs.Customers
+@using Infrastructure.Interfaces
+@using MudBlazor
+@inject NavigationManager Navigation
+@inject ICustomerService CustomerService
+@rendermode InteractiveServer
+
+<h3>Customers</h3>
+
+<div class="d-flex justify-content-end">
+    <button class="btn btn-primary mb-4" style="background-color: #4A3AFF" @onclick="NavigateToCreate">
+        + Add new
+    </button>
+</div>
+
+<div class="row">
+    @foreach (var customer in customers)
+    {
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 border-0 shadow rounded-4 pt-8">
+                <img
+                    src="https://www.deskera.com/blog/content/images/2022/01/Untitled-design--25--1.png"
+                    class="card-img-top w-75 m-auto" alt="Customer Photo">
+                <div class="card-body text-center">
+                    <div class="d-flex flex-column">
+                        <p class="card-title mb-1">Id: @customer.Id</p>
+                        <p class="card-title mb-1">Full name: @customer.FullName</p>
+                        <p class="card-title mb-1">Phone: @customer.Phone</p>
+                    </div>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button @onclick="() => NavigateToEdit(customer.Id)" class="btn btn-sm btn-primary">
+                            Edit
+                        </button>
+                        <button @onclick="() => ShowDeleteConfirm(customer.Id)"
+                                class="btn btn-danger btn-sm">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (showDeleteConfirm)
+{
+    <div class="modal" style="display:block; background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение удаления</h5>
+                </div>
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите удалить этого клиента?</p>
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button @onclick="CancelDelete" class="btn btn-secondary">Отмена</button>
+                    <button @onclick="ConfirmDelete" class="btn btn-danger">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<GetCustomerDto> customers = new();
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await CustomerService.GetCustomers();
+        customers = response.Data!;
+    }
+
+    void NavigateToCreate()
+    {
+        Navigation.NavigateTo("/customers/create");
+    }
+
+    void NavigateToEdit(int id)
+    {
+        Navigation.NavigateTo($"/customers/edit/{id}");
+    }
+
+    private bool showDeleteConfirm = false;
+    private int customerIdToDelete;
+
+    private void ShowDeleteConfirm(int id)
+    {
+        customerIdToDelete = id;
+        showDeleteConfirm = true;
+        errorMessage = string.Empty;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirm = false;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        var response = await CustomerService.DeleteCustomerAsync(customerIdToDelete);
+
+        if (response.IsSuccess)
+        {
+            showDeleteConfirm = false;
+            await OnInitializedAsync();
+        }
+        else
+        {
+            errorMessage = response.Message ?? "Ошибка при удалении";
+        }
+    }
+
+}

@@ -1,0 +1,73 @@
+﻿@page "/reservations/create"
+@using Domain.DTOs.Reservations
+@using Infrastructure.Data
+@using Infrastructure.Interfaces
+@inject IReservationService ReservationService
+@inject DataContext Context
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<h3 class="mb-4">Create New Reservation</h3>
+
+<div class="card shadow rounded-4 p-4" style="max-width: 500px;">
+    <EditForm FormName="CreateReservation" Model="reservation" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator/>
+        <ValidationSummary/>
+        <div class="mb-3">
+            <label class="form-label">Customer id</label>
+            <InputNumber class="form-control" @bind-Value="reservation.CustomerId"/>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Table id</label> 
+            <InputNumber class="form-control" @bind-Value="reservation.TableId"/>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Reservation date</label> 
+            <InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="reservation.ReservationDate" TValue="DateTimeOffset"/>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <div>
+                <button type="submit" class="btn btn-primary mb-4" style="background-color: #4A3AFF">
+                    + Add new
+                </button>
+            </div>
+        </div>
+    </EditForm>
+
+</div>
+
+@code {
+    private CreateReservationDto reservation = new();
+    private string errorMessage;
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            reservation.ReservationDate = reservation.ReservationDate.ToUniversalTime();
+            var response = await ReservationService.CreateReservationAsync(reservation);
+            if (!response.IsSuccess)
+            {
+                errorMessage = response.Message!;
+                return;
+            }
+            
+            var table = await Context.Tables.FindAsync(reservation.TableId);
+            if (table!=null)
+            {
+                table.IsReserved = true;
+            }
+
+            Navigation.NavigateTo("/reservations");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
+}

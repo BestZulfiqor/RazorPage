@@ -1,0 +1,120 @@
+﻿@page "/tables"
+@using Domain.DTOs.Tables
+@using Infrastructure.Interfaces
+@using MudBlazor
+@inject NavigationManager Navigation
+@inject ITableService TableService
+@rendermode InteractiveServer
+
+<h3>Tables</h3>
+
+<div class="d-flex justify-content-end">
+    <button class="btn btn-primary mb-4" style="background-color: #4A3AFF" @onclick="NavigateToCreate">
+        + Add new
+    </button>
+</div>
+
+<div class="row">
+    @foreach (var table in tables)
+    {
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 border-0 shadow rounded-4 pt-8">
+                <img
+                    src="https://prokitay.ru/wp-content/uploads/2018/05/IMG_8528-1000x750.jpg"
+                    class="card-img-top w-75 m-auto" alt="Student Photo">
+                <div class="card-body text-center">
+                    <div class="d-flex flex-column">
+                        <p class="card-title mb-1">Number: @table.Number</p>
+                        <p class="card-title mb-1">Seats: @table.Seats</p>
+                        <p class="card-title mb-1">Reserved status: @table.IsReserved</p>
+                    </div>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button @onclick="() => NavigateToEdit(table.Id)" class="btn btn-sm btn-primary">
+                            Edit
+                        </button>
+                        <button @onclick="() => ShowDeleteConfirm(table.Id)"
+                                class="btn btn-danger btn-sm">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (showDeleteConfirm)
+{
+    <div class="modal" style="display:block; background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение удаления</h5>
+                </div>
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите удалить этот столик?</p>
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button @onclick="CancelDelete" class="btn btn-secondary">Отмена</button>
+                    <button @onclick="ConfirmDelete" class="btn btn-danger">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<GetTableDto> tables = new();
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await TableService.GetTables();
+        tables = response.Data!;
+    }
+
+    void NavigateToCreate()
+    {
+        Navigation.NavigateTo("/tables/create");
+    }
+
+    void NavigateToEdit(int id)
+    {
+        Navigation.NavigateTo($"/tables/edit/{id}");
+    }
+
+    private bool showDeleteConfirm = false;
+    private int tableIdToDelete;
+
+    private void ShowDeleteConfirm(int id)
+    {
+        tableIdToDelete = id;
+        showDeleteConfirm = true;
+        errorMessage = string.Empty;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirm = false;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        var response = await TableService.DeleteTableAsync(tableIdToDelete);
+
+        if (response.IsSuccess)
+        {
+            showDeleteConfirm = false;
+            await OnInitializedAsync();
+        }
+        else
+        {
+            errorMessage = response.Message ?? "Ошибка при удалении";
+        }
+    }
+
+}

@@ -3,7 +3,7 @@ using Domain.Entities;
 using Domain.DTOs.Customers;
 using Domain.DTOs.Tables;
 using Domain.DTOs.Reservations;
-
+namespace Infrastructure.AutoMapper;
 public class InfrastructureProfile : Profile
 {
     public InfrastructureProfile()

@@ -14,12 +14,16 @@ public class ReservationService(DataContext context, IMapper mapper) : IReservat
     public async Task<Response<GetReservationDto>> CreateReservationAsync(CreateReservationDto reservationDto)
     {
         var reservation = mapper.Map<Reservation>(reservationDto);
-        await context.Reservations.AddAsync(reservation);
-        var result = await context.SaveChangesAsync();
-        var dto = mapper.Map<GetReservationDto>(reservation);
-        return result == 0
-            ? new Response<GetReservationDto>(HttpStatusCode.BadRequest, "Reservation not add!")
-            : new Response<GetReservationDto>(dto);
+        if (reservation.Table.IsReserved == false)
+        {
+            await context.Reservations.AddAsync(reservation);
+            var result = await context.SaveChangesAsync();
+            var dto = mapper.Map<GetReservationDto>(reservation);
+            return result == 0
+                ? new Response<GetReservationDto>(HttpStatusCode.BadRequest, "Reservation not add!")
+                : new Response<GetReservationDto>(dto);
+        }
+        else return  new Response<GetReservationDto>(HttpStatusCode.BadRequest, "Reservation already exists!");
     }
 
     public async Task<Response<string>> DeleteReservationAsync(int id)

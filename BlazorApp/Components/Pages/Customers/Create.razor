@@ -1,0 +1,59 @@
+﻿@page "/customers/create"
+@using Domain.DTOs.Customers
+@using Infrastructure.Interfaces
+@inject ICustomerService CustomerService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<h3 class="mb-4">Create New Customer</h3>
+
+<div class="card shadow rounded-4 p-4" style="max-width: 500px;">
+    <EditForm FormName="CreateTable" Model="customer" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator/>
+        <ValidationSummary/>
+        <div class="mb-3">
+            <label class="form-label">Full name</label>
+            <InputText class="form-control" @bind-Value="customer.FullName"/>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Phone</label> 
+            <InputText class="form-control" @bind-Value="customer.Phone"/>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <div>
+                <button type="submit" class="btn btn-primary mb-4" style="background-color: #4A3AFF">
+                    + Add new
+                </button>
+            </div>
+        </div>
+    </EditForm>
+
+</div>
+
+@code {
+    private CreateCustomerDto customer = new();
+    private string errorMessage;
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            var response = await CustomerService.CreateCustomerAsync(customer);
+            if (!response.IsSuccess)
+            {
+                errorMessage = response.Message!;
+                return;
+            }
+
+            Navigation.NavigateTo("/customers");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
+}
