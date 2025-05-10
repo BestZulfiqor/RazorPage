@@ -33,8 +33,11 @@
     <div class="form-group mb-3"
         style="display: flex; flex-direction: column; gap: 5px; max-width: 500px; align-items: center;justify-content: center; margin: auto;">
         <label for="reservationTime">Время бронирование</label>
-        <input type="datetime-local" asp-for="Reservations.ReservationDate" id="reservationTime" class="form-control"
-            value="@Model.Reservations.ReservationDate">
+        <input type="datetime-local" asp-for="Reservations.ReservationDateStart" id="reservationTime" class="form-control"
+               value="@Model.Reservations.ReservationDateStart">
+        <label for="reservationTime">Время бронирование</label>
+        <input type="datetime-local" asp-for="Reservations.ReservationDateEnd" id="reservationTime" class="form-control"
+               value="@Model.Reservations.ReservationDateEnd">
         <button class="btn btn-primary w-100" type="submit">Сохранить</button>
 
     </div>

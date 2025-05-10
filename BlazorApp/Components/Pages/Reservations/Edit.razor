@@ -1,74 +1,121 @@
 ﻿@page "/reservations/edit/{id:int}"
-@using System.Net
 @using Domain.DTOs.Reservations
-@using Infrastructure.Interfaces
-@rendermode InteractiveServer
-@inject IReservationService ReservationService
+@using Domain.Responses
 @inject NavigationManager Navigation
+@inject IHttpClientFactory ClientFactory
+@rendermode InteractiveServer
 
-<h3>Edit reservation</h3>
+<h3 class="mb-4">Edit Reservation</h3>
 
-<EditForm Model="@reservation" OnValidSubmit="@SaveTable">
-    <DataAnnotationsValidator/>
-    <div class="mb-3">
-        <label class="form-label">Customer Id</label>
-        <InputNumber class="form-control" @bind-Value="reservation.CustomerId"/>
-        <ValidationMessage For="@(() => reservation.CustomerId)" TValue="int"/>
-    </div>
+<div class="card shadow rounded-4 p-4" style="max-width: 500px;">
+    <EditForm Model="@reservation" OnValidSubmit="@SaveReservation">
+        <DataAnnotationsValidator/>
+        <ValidationSummary/>
+        <div class="mb-3">
+            <label class="form-label">Customer Id</label>
+            <InputNumber class="form-control" @bind-Value="reservation.CustomerId"/>
+            <ValidationMessage For="@(() => reservation.CustomerId)" TValue="int"/>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label">Table id</label>
-        <InputNumber class="form-control" @bind-Value="reservation.TableId"/>
-        <ValidationMessage For="@(() => reservation.TableId)" TValue="int"/>
-    </div>
+        <div class="mb-3">
+            <label class="form-label">Table id</label>
+            <InputNumber class="form-control" @bind-Value="reservation.TableId"/>
+            <ValidationMessage For="@(() => reservation.TableId)" TValue="int"/>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label">Reservation date</label>
-        <InputDate @bind-Value="reservation.ReservationDate"/>
-        <ValidationMessage For="@(() => reservation.ReservationDate)" TValue="DateTimeOffset"/>
-    </div>
-    
-    <div class="mt-4">
-        <button type="submit" class="btn btn-primary me-2">Save</button>
-        <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
-    </div>
-</EditForm>
+        <div class="mb-3">
+            <label class="form-label">Start date</label>
+            <InputDate Type="InputDateType.DateTimeLocal" class="form-control"
+                       @bind-Value="reservation.ReservationDateStart"
+                       TValue="DateTimeOffset"/>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">End date</label>
+            <InputDate Type="InputDateType.DateTimeLocal" class="form-control"
+                       @bind-Value="reservation.ReservationDateEnd"
+                       TValue="DateTimeOffset"/>
+        </div>
 
-@code{
-    [Parameter]
-    public int Id { get; set; }
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary me-2">Save</button>
+            <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+        </div>
+    </EditForm>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mt-3">@errorMessage</div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
     private GetReservationDto reservation = new();
     private string errorMessage = string.Empty;
+    private HttpClient httpClient = null!;
+
     protected override async Task OnInitializedAsync()
     {
-        var response = await ReservationService.GetReservationByIdAsync(Id);
-        reservation = response.Data!;
-    }
-    
-    private async Task SaveTable()
-    {
+        httpClient = ClientFactory.CreateClient();
+        httpClient.BaseAddress = new Uri("https://localhost:7290/");
+
         try
         {
-            var updateTableDto = new UpdateReservationDto()
+            var response = await httpClient.GetFromJsonAsync<Response<GetReservationDto>>($"api/reservation/{Id}");
+            if (response != null && response.IsSuccess)
             {
-                Id = reservation.Id,
-                CustomerId = reservation.CustomerId,
-                ReservationDate= reservation.ReservationDate,
-                TableId= reservation.TableId
-            };
-            var response = await ReservationService.UpdateReservationAsync(updateTableDto.Id, updateTableDto);
-            if (!response.IsSuccess)
-            {
-                errorMessage = response.Message!;
-                return;
+                reservation = response.Data!;
             }
-            Navigation.NavigateTo("/reservations");
+            else
+            {
+                errorMessage = response?.Message ?? "Failed to load reservation data";
+            }
         }
         catch (Exception e)
         {
-            errorMessage = e.Message;
+            errorMessage = $"Error loading reservation: {e.Message}";
             Console.WriteLine(e);
-            throw;  
+        }
+    }
+
+    private async Task SaveReservation()
+    {
+        try
+        {
+            var updateReservationDto = new UpdateReservationDto()
+            {
+                Id = reservation.Id,
+                CustomerId = reservation.CustomerId,
+                ReservationDateStart = reservation.ReservationDateStart.ToUniversalTime(),
+                ReservationDateEnd = reservation.ReservationDateEnd.ToUniversalTime(),
+                TableId = reservation.TableId
+            };
+
+            var response = await httpClient.PutAsJsonAsync($"api/reservation/{updateReservationDto.Id}", updateReservationDto);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Error updating reservation. Status code: {response.StatusCode}. Response: {responseContent}";
+                return;
+            }
+
+            var apiResponse = await response.Content.ReadFromJsonAsync<Response<GetReservationDto>>();
+            if (apiResponse != null && apiResponse.IsSuccess)
+            {
+                Navigation.NavigateTo("/reservations");
+            }
+            else
+            {
+                errorMessage = apiResponse?.Message ?? "Unknown error occurred";
+            }
+        }
+        catch (Exception e)
+        {
+            errorMessage = $"Error processing request: {e.Message}";
+            Console.WriteLine(e);
         }
     }
 

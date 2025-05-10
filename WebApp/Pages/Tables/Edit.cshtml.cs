@@ -19,7 +19,6 @@ public class Edit(DataContext context) : PageModel
         }
 
         Table.Id = table.Id;
-        Table.IsReserved = table.IsReserved;
         Table.Number = table.Number;
         Table.Seats = table.Seats;
 
@@ -39,7 +38,6 @@ public class Edit(DataContext context) : PageModel
             return RedirectToPage("./Index");
         }
 
-        table.IsReserved = Table.IsReserved;
         table.Number = Table.Number;
         table.Seats = Table.Seats;
 

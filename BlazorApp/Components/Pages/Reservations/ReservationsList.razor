@@ -1,33 +1,59 @@
 ﻿@page "/reservations"
 @using Domain.DTOs.Reservations
+@using Domain.Responses
 @using Infrastructure.Interfaces
 @inject NavigationManager Navigation
 @inject IReservationService ReservationService
+@inject IHttpClientFactory ClientFactory
 @rendermode InteractiveServer
 
 <h3>Reservations</h3>
-
 <div class="d-flex justify-content-end">
     <button class="btn btn-primary mb-4" style="background-color: #4A3AFF" @onclick="NavigateToCreate">
         + Add new
     </button>
 </div>
 
-<div class="row">
+<div class="row g-4">
     @foreach (var reservation in reservations)
     {
-        <div class="col-md-3 mb-4">
-            <div class="card h-100 border-0 shadow rounded-4 pt-8">
-                <img
-                    src="https://media.licdn.com/dms/image/v2/D4D12AQEwjiIh5bMaNQ/article-cover_image-shrink_600_2000/article-cover_image-shrink_600_2000/0/1695267350942?e=2147483647&v=beta&t=ShlNlV3-ImivEgxTxYcRzet9vN3j94w79d3qHkhwe14"
-                    class="card-img-top w-75 m-auto" alt="Reservation photo"/>
-                <div class="card-body text-center">
-                    <div class="d-flex flex-column">
-                        <p class="card-title mb-1">Reservation id: @reservation.Id</p>
-                        <p class="card-title mb-1">Customer id: @reservation.CustomerId</p>
-                        <p class="card-title mb-1">Reservation date: @reservation.ReservationDate</p>
-                        <p class="card-title mb-1">Table id: @reservation.TableId</p>
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm rounded-3">
+                <div class="card-header bg-primary bg-opacity-10 py-3 border-0">
+                    <h5 class="card-title mb-0 text-center fw-semibold text-primary">Reservation #@reservation.Id</h5>
+                </div>
+                <div class="card-body pt-0">
+                    <div class="d-flex flex-column gap-2">
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <p class="text-muted">Dates</p>
+                                <p class="mb-0 fw-medium">@reservation.ReservationDateStart.ToString("yy-MM-dd") - @reservation.ReservationDateEnd.ToString("yy-MM-dd")</p>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <p class="text-muted">Time</p>
+                                <p class="mb-0 fw-medium">@reservation.ReservationDateStart.ToString("hh:mm") - @reservation.ReservationDateEnd.ToString("hh:mm tt")</p>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <p class="text-muted">Customer</p>
+                                <p class="mb-0 fw-medium">ID: @reservation.CustomerId</p>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <p class="text-muted">Table</p>
+                                <p class="mb-0 fw-medium">#@reservation.TableId</p>
+                            </div>
+                        </div>
                     </div>
+                </div>
+                <div class="card-footer bg-transparent border-0 pt-0 pb-3">
                     <div class="d-flex justify-content-center gap-2">
                         <button @onclick="@(() => NavigateToEdit(reservation.Id))" class="btn btn-sm btn-primary">
                             Edit
@@ -66,14 +92,43 @@
     </div>
 }
 
-@code{
+@code {
     private List<GetReservationDto> reservations = new();
     private string errorMessage = string.Empty;
+    private bool showDeleteConfirm = false;
+    private int reservationIdToDelete;
+    private HttpClient httpClient;
 
     protected override async Task OnInitializedAsync()
     {
-        var response = await ReservationService.GetReservations();
-        reservations = response.Data!;
+        httpClient = ClientFactory.CreateClient();
+        httpClient.BaseAddress = new Uri("https://localhost:7290/");
+
+        try
+        {
+            var response = await httpClient.GetAsync("api/reservation");
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = await response.Content.ReadFromJsonAsync<Response<List<GetReservationDto>>>();
+                if (apiResponse != null && apiResponse.IsSuccess)
+                {
+                    reservations = apiResponse.Data!;
+                }
+                else
+                {
+                    errorMessage = apiResponse?.Message ?? "Ошибка получения данных";
+                }
+            }
+            else
+            {
+                errorMessage = "Ошибка при получении списка бронирований";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            errorMessage = "Исключение при получении бронирований";
+        }
     }
 
     void NavigateToCreate()
@@ -85,9 +140,6 @@
     {
         Navigation.NavigateTo($"/reservations/edit/{id}");
     }
-
-    private bool showDeleteConfirm = false;
-    private int reservationIdToDelete;
 
     private void ShowDeleteConfirm(int id)
     {
@@ -103,19 +155,31 @@
 
     private async Task ConfirmDelete()
     {
-        var response = await ReservationService.DeleteReservationAsync(reservationIdToDelete);
-
-        if (!response.IsSuccess)
+        try
         {
-            showDeleteConfirm = false;
-            await OnInitializedAsync();
+            var response = await httpClient.DeleteAsync($"api/reservation/{reservationIdToDelete}");
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = await response.Content.ReadFromJsonAsync<Response<bool>>();
+                if (apiResponse != null && apiResponse.IsSuccess)
+                {
+                    showDeleteConfirm = false;
+                    await OnInitializedAsync();
+                }
+                else
+                {
+                    errorMessage = apiResponse?.Message ?? "Ошибка при удалении";
+                }
+            }
+            else
+            {
+                errorMessage = "Ошибка HTTP при удалении";
+            }
         }
-        else
+        catch (Exception ex)
         {
-            errorMessage = response.Message ?? "Ошибка при удалении";
+            Console.WriteLine(ex);
+            errorMessage = "Исключение при удалении";
         }
     }
-
-}
-
 }

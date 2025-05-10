@@ -27,7 +27,8 @@
         <tr>
             <td>@reservation.Table.Number</td>
             <td>@reservation.Customer.FullName</td>
-            <td>@reservation.ReservationDate</td>
+            <td>@reservation.ReservationDateStart</td>
+            <td>@reservation.ReservationDateEnd</td>
             <td>
                 <form method="post" asp-page-handler="Delete" asp-route-id="@reservation.Id">
                     <button type="submit" class="btn btn-danger">Отменить</button>

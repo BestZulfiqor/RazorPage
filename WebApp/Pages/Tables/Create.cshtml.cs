@@ -27,7 +27,6 @@ public class Create(DataContext context) : PageModel
         {
             Number = Tables.Number,
             Seats = Tables.Seats,
-            IsReserved = false
         };
 
 

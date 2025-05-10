@@ -5,10 +5,11 @@ using Domain.Entities;
 using Domain.Responses;
 using Infrastructure.Data;
 using Infrastructure.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Services;
-
+[Authorize]
 public class CustomerService(DataContext context, IMapper mapper) : ICustomerService
 {
     public async Task<Response<GetCustomerDto>> CreateCustomerAsync(CreateCustomerDto customerDto)

@@ -40,7 +40,6 @@
     {
         try
         {
-            table.IsReserved = false;
             var response = await TableService.CreateTableAsync(table);
             if (!response.IsSuccess)
             {

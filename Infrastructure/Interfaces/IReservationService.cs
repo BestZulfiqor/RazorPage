@@ -1,4 +1,5 @@
 using Domain.DTOs.Reservations;
+using Domain.Filters;
 using Domain.Responses;
 
 namespace Infrastructure.Interfaces;

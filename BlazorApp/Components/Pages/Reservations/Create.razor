@@ -1,10 +1,9 @@
 ﻿@page "/reservations/create"
 @using Domain.DTOs.Reservations
+@using Domain.Responses
 @using Infrastructure.Data
-@using Infrastructure.Interfaces
-@inject IReservationService ReservationService
-@inject DataContext Context
 @inject NavigationManager Navigation
+@inject IHttpClientFactory ClientFactory
 @rendermode InteractiveServer
 
 <h3 class="mb-4">Create New Reservation</h3>
@@ -19,13 +18,20 @@
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Table id</label> 
+            <label class="form-label">Table id</label>
             <InputNumber class="form-control" @bind-Value="reservation.TableId"/>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Reservation start date</label>
+            <InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="reservation.ReservationDateStart"
+                       TValue="DateTimeOffset"/>
         </div>
         
         <div class="mb-3">
-            <label class="form-label">Reservation date</label> 
-            <InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="reservation.ReservationDate" TValue="DateTimeOffset"/>
+            <label class="form-label">Reservation end date</label>
+            <InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="reservation.ReservationDateEnd"
+                       TValue="DateTimeOffset"/>
         </div>
 
         <div class="d-flex justify-content-between">
@@ -37,37 +43,53 @@
         </div>
     </EditForm>
 
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mt-3">@errorMessage</div>
+    }
 </div>
 
 @code {
     private CreateReservationDto reservation = new();
     private string errorMessage;
+    private HttpClient httpClient = null!;
+
+    protected override void OnInitialized()
+    {
+        httpClient = ClientFactory.CreateClient();
+        httpClient.BaseAddress = new Uri("https://localhost:7290/");
+    }
 
     private async Task HandleValidSubmit()
     {
         try
         {
-            reservation.ReservationDate = reservation.ReservationDate.ToUniversalTime();
-            var response = await ReservationService.CreateReservationAsync(reservation);
-            if (!response.IsSuccess)
+            reservation.ReservationDateStart = reservation.ReservationDateStart.ToUniversalTime();
+            reservation.ReservationDateEnd = reservation.ReservationDateEnd.ToUniversalTime();
+
+            var response = await httpClient.PostAsJsonAsync("api/reservation", reservation);
+
+            if (!response.IsSuccessStatusCode)
             {
-                errorMessage = response.Message!;
+                var responseContent = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Ошибка при создании бронирования. Код ошибки: {response.StatusCode}. Ответ: {responseContent}";
                 return;
             }
-            
-            var table = await Context.Tables.FindAsync(reservation.TableId);
-            if (table!=null)
-            {
-                table.IsReserved = true;
-            }
 
-            Navigation.NavigateTo("/reservations");
+            var apiResponse = await response.Content.ReadFromJsonAsync<Response<GetReservationDto>>();
+            if (apiResponse != null && apiResponse.IsSuccess)
+            {
+                Navigation.NavigateTo("/reservations");
+            }
+            else
+            {
+                errorMessage = apiResponse?.Message ?? "Неизвестная ошибка.";
+            }
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
-            throw;
+            errorMessage = "Ошибка при обработке запроса. Попробуйте снова.";
         }
     }
-
 }

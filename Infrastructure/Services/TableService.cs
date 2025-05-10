@@ -5,10 +5,11 @@ using Domain.Entities;
 using Domain.Responses;
 using Infrastructure.Data;
 using Infrastructure.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Services;
-
+[Authorize]
 public class TableService(DataContext context, IMapper mapper) : ITableService
 {
     public async Task<Response<GetTableDto>> CreateTableAsync(CreateTableDto tableDto)
@@ -61,7 +62,6 @@ public class TableService(DataContext context, IMapper mapper) : ITableService
         {
             return new Response<GetTableDto>(HttpStatusCode.NotFound, "Table not found");
         }
-        exist.IsReserved = tableDto.IsReserved;
         exist.Number = tableDto.Number;
         exist.Seats = tableDto.Seats;
         var result = await context.SaveChangesAsync();

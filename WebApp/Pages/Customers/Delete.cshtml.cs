@@ -38,8 +38,6 @@ public class Delete(DataContext context) : PageModel
         foreach (var res in reservations)
         {
             var table = await context.Tables.FindAsync(res.TableId);
-            if (table != null)
-                table.IsReserved = false;
 
             context.Reservations.Remove(res);
         }
