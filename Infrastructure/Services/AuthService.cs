@@ -53,7 +53,6 @@ public class AuthService(
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        //var roles = await userManager.GetRolesAsync(user);
 
         var claims = new List<Claim>
         {
@@ -61,7 +60,6 @@ public class AuthService(
             new Claim(JwtRegisteredClaimNames.PhoneNumber, user.PhoneNumber ?? "")
         };
 
-        //claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
         var token = new JwtSecurityToken(
             issuer: config["Jwt:Issuer"],
