@@ -67,8 +67,8 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Описание вашего API",
         Contact = new OpenApiContact
         {
-            Name = "Alijon Manonzoda",
-            Email = "alijonzabirov20@gmail.com",
+            Name = "Zulfiqor",
+            Email = "Thebest@gmail.com",
         }
     });
             
