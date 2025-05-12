@@ -2,10 +2,11 @@
 using Domain.Filters;
 using Domain.Responses;
 using Infrastructure.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Controllers;
-
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class ReservationController(IReservationService service) : ControllerBase

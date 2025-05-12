@@ -1,5 +1,7 @@
-﻿using Domain.DTOs;
+﻿using System.Net;
+using Domain.DTOs;
 using Infrastructure.Data;
+using Infrastructure.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +11,7 @@ namespace WebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AccountController(
+public class AccountController(IAuthService service,
     UserManager<IdentityUser> userManager,
     SignInManager<IdentityUser> signInManager,
     DataContext context) : ControllerBase
@@ -36,16 +38,13 @@ public class AccountController(
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDto model)
     {
-        var user = await userManager.FindByNameAsync(model.UserName);
-        if (user == null)
-            return BadRequest("Login or password is incorrect");
+        var result = await service.Login(model);
+        if (result.StatusCode != (int)HttpStatusCode.OK)
+        {
+            return BadRequest(result.Message);
+        }
 
-        var result = await signInManager.PasswordSignInAsync(user, model.Password, true, false);
-
-        if (!result.Succeeded)
-            return BadRequest("Login or password is incorrect");
-
-        return Ok("Logged in");
+        return Ok(result.Data);
     }
         
     [Authorize]
