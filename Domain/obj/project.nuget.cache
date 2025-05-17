@@ -1,8 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "WCH8EIkSmMo=",
+  "dgSpecHash": "p6QihznVR6E=",
   "success": true,
   "projectFilePath": "C:\\Users\\Admin\\Desktop\\DifficlutRazorApp\\Domain\\Domain.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\Admin\\.nuget\\packages\\bouncycastle.cryptography\\2.5.1\\bouncycastle.cryptography.2.5.1.nupkg.sha512",
+    "C:\\Users\\Admin\\.nuget\\packages\\mimekit\\4.12.0\\mimekit.4.12.0.nupkg.sha512",
+    "C:\\Users\\Admin\\.nuget\\packages\\system.security.cryptography.pkcs\\8.0.1\\system.security.cryptography.pkcs.8.0.1.nupkg.sha512"
+  ],
   "logs": []
 }

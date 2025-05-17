@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Services;
 [Authorize]
-public class ReservationService(DataContext context, IMapper mapper) : IReservationService
+public class ReservationService(IBaseRepository<Reservation, int> repository, DataContext context, IMapper mapper) : IReservationService
 {
     public async Task<Response<GetReservationDto>> CreateReservationAsync(CreateReservationDto reservationDto)
     {
@@ -37,11 +37,12 @@ public class ReservationService(DataContext context, IMapper mapper) : IReservat
             var reservation = mapper.Map<Reservation>(reservationDto);
             reservation.Table = table;
 
-            await context.Reservations.AddAsync(reservation);
-            await context.SaveChangesAsync();
+            var result = await repository.AddAsync(reservation);
 
             var dto = mapper.Map<GetReservationDto>(reservation);
-            return new Response<GetReservationDto>(dto);
+            return result == 0
+                ? new Response<GetReservationDto>(HttpStatusCode.BadRequest, "Reservation not add!")
+                : new Response<GetReservationDto>(dto);
         }
         catch (Exception ex)
         {
@@ -59,8 +60,7 @@ public class ReservationService(DataContext context, IMapper mapper) : IReservat
             return new Response<string>(HttpStatusCode.NotFound, "Reservation not found");
         }
 
-        context.Reservations.Remove(exist);
-        var result = await context.SaveChangesAsync();
+        var result = await repository.DeleteAsync(exist); 
         return result == 0
             ? new Response<string>(HttpStatusCode.BadRequest, "Reservation not deleted")
             : new Response<string>("Reservation deleted!");
@@ -68,19 +68,19 @@ public class ReservationService(DataContext context, IMapper mapper) : IReservat
 
     public async Task<Response<GetReservationDto>> GetReservationByIdAsync(int id)
     {
-        var exist = await context.Reservations.FindAsync(id);
+        var exist = await repository.GetById(id);
         if (exist == null)
         {
             return new Response<GetReservationDto>(HttpStatusCode.NotFound, "Reservation not found");
         }
-
+        
         var dto = mapper.Map<GetReservationDto>(exist);
         return new Response<GetReservationDto>(dto);
     }
 
     public async Task<Response<List<GetReservationDto>>> GetReservations()
     {
-        var reservations = await context.Reservations.ToListAsync();
+        var reservations = await repository.GetAllAsync();
         var data = mapper.Map<List<GetReservationDto>>(reservations);
         return new Response<List<GetReservationDto>>(data);
     }
@@ -116,7 +116,7 @@ public class ReservationService(DataContext context, IMapper mapper) : IReservat
             existingReservation.ReservationDateStart = reservationDto.ReservationDateStart;
             existingReservation.ReservationDateEnd = reservationDto.ReservationDateEnd;
             existingReservation.TableId = reservationDto.TableId;
-            var result = await context.SaveChangesAsync();
+            var result = await repository.UpdateAsync(existingReservation);
 
             var dto = mapper.Map<GetReservationDto>(existingReservation);
             return result == 0

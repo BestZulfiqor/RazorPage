@@ -7,17 +7,18 @@ using Infrastructure.Data;
 using Infrastructure.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services;
 [Authorize]
-public class TableService(DataContext context, IMapper mapper) : ITableService
+public class TableService(IBaseRepository<Table, int> tableRepository, IMapper mapper, ILogger logger) : ITableService
 {
     public async Task<Response<GetTableDto>> CreateTableAsync(CreateTableDto tableDto)
     {
-        var Table = mapper.Map<Table>(tableDto);
-        await context.Tables.AddAsync(Table);
-        var result = await context.SaveChangesAsync();
-        var dto = mapper.Map<GetTableDto>(Table);
+        logger.LogInformation("Начинаем создание стола");
+        var table = mapper.Map<Table>(tableDto);
+        var result = await tableRepository.AddAsync(table);
+        var dto = mapper.Map<GetTableDto>(table);
         return result == 0
             ? new Response<GetTableDto>(HttpStatusCode.BadRequest, "Table not add!")
             : new Response<GetTableDto>(dto);
@@ -25,13 +26,14 @@ public class TableService(DataContext context, IMapper mapper) : ITableService
 
     public async Task<Response<string>> DeleteTableAsync(int id)
     {
-        var exist = await context.Tables.FindAsync(id);
+        var exist = await tableRepository.GetById(id);
         if (exist == null)
         {
             return new Response<string>(HttpStatusCode.NotFound, "Table not found");
         }
-        context.Tables.Remove(exist);
-        var result = await context.SaveChangesAsync();
+
+        var result = await tableRepository.DeleteAsync(exist);
+        
         return result == 0
             ? new Response<string>(HttpStatusCode.BadRequest, "Table not deleted")
             : new Response<string>("Table deleted!");
@@ -39,7 +41,8 @@ public class TableService(DataContext context, IMapper mapper) : ITableService
 
     public async Task<Response<GetTableDto>> GetTableByIdAsync(int id)
     {
-        var exist = await context.Tables.FindAsync(id);
+        logger.LogInformation("Taking table id");
+        var exist = await tableRepository.GetById(id);
         if (exist == null)
         {
             return new Response<GetTableDto>(HttpStatusCode.NotFound, "Table not found");
@@ -50,21 +53,23 @@ public class TableService(DataContext context, IMapper mapper) : ITableService
 
     public async Task<Response<List<GetTableDto>>> GetTables()
     {
-        var Tables = await context.Tables.ToListAsync();
-        var data = mapper.Map<List<GetTableDto>>(Tables);
+        var tables = await tableRepository.GetAllAsync();
+        var data = mapper.Map<List<GetTableDto>>(tables);
         return new Response<List<GetTableDto>>(data);
     }
 
     public async Task<Response<GetTableDto>> UpdateTableAsync(int id, UpdateTableDto tableDto)
     {
-        var exist = await context.Tables.FindAsync(id);
+        var exist = await tableRepository.GetById(id);
         if (exist == null)
         {
             return new Response<GetTableDto>(HttpStatusCode.NotFound, "Table not found");
         }
         exist.Number = tableDto.Number;
         exist.Seats = tableDto.Seats;
-        var result = await context.SaveChangesAsync();
+        
+        var result = await tableRepository.UpdateAsync(exist);
+        
         var dto = mapper.Map<GetTableDto>(exist);
         return result == 0
             ? new Response<GetTableDto>(HttpStatusCode.BadRequest, "Table not updated")
@@ -72,3 +77,4 @@ public class TableService(DataContext context, IMapper mapper) : ITableService
     }
 
 }
+
